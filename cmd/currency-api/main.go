@@ -39,6 +39,7 @@ func main() {
 			log.Fatalf("Cron error: %s", err)
 		}
 	})
+	c.Start()
 
 	r := gin.New()
 	routes.DeployRoutes(r)

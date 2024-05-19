@@ -2,6 +2,7 @@ package mailer
 
 import (
 	"bytes"
+	_ "embed"
 	"fmt"
 	"log"
 	"net/smtp"
@@ -13,7 +14,7 @@ import (
 	"github.com/adaggerboy/genesis-academy-case-app/pkg/database"
 )
 
-// go:embed template.html
+//go:embed template.html
 var templateData string
 
 type EmailData struct {
@@ -27,16 +28,15 @@ func SendMail(to string, subject string, data EmailData, conf confModel.SMTPConf
 		return err
 	}
 
-	var body bytes.Buffer
-	if err := tmpl.Execute(&body, data); err != nil {
+	body := bytes.NewBuffer(make([]byte, 0))
+	body.Write([]byte(fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-version: 1.0;\r\nContent-Type: text/html; charset=\"UTF-8\";\r\n\r\n", conf.Email, to, subject)))
+	if err := tmpl.Execute(body, data); err != nil {
 		return err
 	}
 
-	auth := smtp.PlainAuth("", conf.User, conf.Password, conf.Password)
+	auth := smtp.PlainAuth("", conf.User, conf.Password, conf.Host)
 
-	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\nMIME-version: 1.0;\r\nContent-Type: text/html; charset=\"UTF-8\";\r\n\r\n", conf.User, to, subject)
-
-	err = smtp.SendMail(fmt.Sprintf("%s:%d", conf.Host, conf.Port), auth, conf.User, []string{to}, []byte(msg))
+	err = smtp.SendMail(fmt.Sprintf("%s:%d", conf.Host, conf.Port), auth, conf.Email, []string{to}, body.Bytes())
 	if err != nil {
 		return err
 	}
@@ -45,23 +45,25 @@ func SendMail(to string, subject string, data EmailData, conf confModel.SMTPConf
 }
 
 func GoThroughSubscriptions() error {
+
 	subs, err := database.GetDatabase().GetSubscriptions()
 	if err != nil {
 		return err
 	}
+
 	for _, e := range subs {
-		go func() {
+		go func(e string) {
 			rate, err := openexchangeapi.RequestUSDPairCached("UAH")
 			if err != nil {
 				log.Printf("Error: getting actual rates: %s", err)
 			}
-			SendMail(e, "Current USD/UAH rate", EmailData{
+			err = SendMail(e, "Current USD/UAH rate", EmailData{
 				Rate: rate,
 			}, config.GlobalConfig.SMTPConfig)
 			if err != nil {
 				log.Printf("Error: sending email: %s", err)
 			}
-		}()
+		}(e)
 	}
 	return nil
 }

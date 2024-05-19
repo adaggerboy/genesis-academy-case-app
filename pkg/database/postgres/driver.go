@@ -39,7 +39,6 @@ func getDI(endpoint config.DatabaseEndpointConfig) (database.IDatabase, error) {
 		return nil, fmt.Errorf("postgres database connect error: %s", err)
 	}
 	chk, err := conn.Query("select 1")
-
 	if err != nil {
 		return nil, fmt.Errorf("postgres database connect error: %s", err)
 	}
@@ -48,8 +47,9 @@ func getDI(endpoint config.DatabaseEndpointConfig) (database.IDatabase, error) {
 	}
 	chk.Close()
 
-	reader := &PostgresConnection{db: conn
-	timeout: time.Duration(endpoint.Timeout),}
+	reader := &PostgresConnection{db: conn,
+		timeout: time.Duration(endpoint.Timeout)}
+	reader.deploySchemas()
 	err = reader.prepareStatements()
 	if err != nil {
 		return nil, fmt.Errorf("postgres database prepare error: %s", err)

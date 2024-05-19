@@ -1,0 +1,26 @@
+database:
+  name: "main"
+  driver: "postgres"
+  host: "db"
+  user: "authuser"
+  database: "authdb"
+  password: "authpass"
+  port: 5432
+  timeout: 30
+
+smtp:
+  host: "smtp.example.com"
+  user: "smtpuser"
+  email: "test@example.com"
+  password: "smtppassword"
+  port: 587
+
+http:
+  endpoints:
+    - ":3030"
+
+openexchange:
+  token: "your-api-token"
+  cache_duration: 3600
+
+cron_sender_string: "0 0 * * *"

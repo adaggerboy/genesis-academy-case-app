@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"io"
+	"log"
 
 	"github.com/adaggerboy/genesis-academy-case-app/pkg/3rd/openexchangeapi"
 	"github.com/adaggerboy/genesis-academy-case-app/pkg/database"
@@ -21,6 +22,7 @@ func DeployRoutes(r gin.IRouter) {
 	r.GET("rate", func(ctx *gin.Context) {
 		rate, err := openexchangeapi.RequestUSDPairCached("UAH")
 		if err != nil {
+			log.Printf("Request /rate: error: %s", err)
 			ctx.String(500, "internal server error")
 			return
 		}
@@ -32,16 +34,19 @@ func DeployRoutes(r gin.IRouter) {
 		sub := StructSubscriptionRequest{}
 		bytes, err := io.ReadAll(ctx.Request.Body)
 		if err != nil {
-			ctx.String(500, "bad request")
+			log.Printf("Request /subscribe: error: %s", err)
+			ctx.String(400, "bad request")
 			return
 		}
 		json.Unmarshal(bytes, &sub)
 		if err != nil {
-			ctx.String(500, "bad request")
+			log.Printf("Request /subscribe: error: %s", err)
+			ctx.String(400, "bad request")
 			return
 		}
 		created, err := database.GetDatabase().CreateSubscription(sub.Email)
 		if err != nil {
+			log.Printf("Request /subscribe: error: %s", err)
 			ctx.String(500, "internal server error")
 			return
 		}
